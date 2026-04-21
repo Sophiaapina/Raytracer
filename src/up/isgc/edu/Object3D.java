@@ -1,4 +1,12 @@
 package up.isgc.edu;
 
-public class Object3D {
+import java.awt.Color;
+
+public abstract class Object3D {
+    public Color color;
+
+    public Object3D(Color color) {
+        this.color = color;
+    }
+    public abstract Intersection intersect(Ray ray);
 }
