@@ -33,7 +33,7 @@ public class Triangle extends Object3D {
         Vector3D Q = T.cross(v2v0);
 
         double v = invDet * ray.direction.dot(Q);
-        if (v < 0 || (u + v) > (1.0 + EPSILON)) return null;  // outside triangle
+        if (v < 0 || (u + v) > (1.0 + EPSILON)) return null;
 
         double t = invDet * Q.dot(v1v0);
         if (t < 0) return null;
