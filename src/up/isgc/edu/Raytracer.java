@@ -4,16 +4,34 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
+import java.util.List;
 
 public class Raytracer {
-    private Scene scene;
+    private Scene  scene;
     private Camera camera;
-    private Color background;
+    private Color  background;
+
+    private Vector3D lightPosition   = new Vector3D(5, 10, 8);
+    private double   ambientStrength = 0.15;
 
     public Raytracer(Scene scene, Camera camera, Color background) {
         this.scene      = scene;
         this.camera     = camera;
         this.background = background;
+    }
+
+    private Color flatShade(Intersection hit) {
+        Vector3D normal  = hit.normal;
+        Vector3D toLight = lightPosition.subtract(hit.point).normalize();
+
+        double diffuse   = Math.max(0, normal.dot(toLight));
+        double intensity = Math.min(ambientStrength + (1.0 - ambientStrength) * diffuse, 1.0);
+
+        Color base = hit.object.color;
+        int r = (int)(base.getRed()   * intensity);
+        int g = (int)(base.getGreen() * intensity);
+        int b = (int)(base.getBlue()  * intensity);
+        return new Color(r, g, b);
     }
 
     public BufferedImage render() {
@@ -24,10 +42,8 @@ public class Raytracer {
         for (int py = 0; py < camera.height; py++) {
             for (int px = 0; px < camera.width; px++) {
                 Ray ray = camera.generateRay(px, py);
-
                 Intersection hit = scene.closestIntersection(ray, camera);
-
-                Color color = (hit != null) ? hit.object.color : background;
+                Color color = (hit != null) ? flatShade(hit) : background;
                 image.setRGB(px, py, color.getRGB());
             }
         }
@@ -41,36 +57,43 @@ public class Raytracer {
 
         Scene scene = new Scene();
 
-        scene.add(new Sphere(new Vector3D(-1.5, 0.5, 0), 0.8, Color.RED));
-        scene.add(new Sphere(new Vector3D( 1.5, 0.5, 0), 0.5, Color.BLUE));
 
+        String objPath = "src/up/isgc/edu/utils/Teapot.obj";
+        Color teapotColor = new Color(255, 105, 180);
 
+        List<Triangle> teapot = OBJreader.loadOBJ(objPath, teapotColor);
+        for (Triangle t : teapot) {
+            scene.add(t);
+        }
+        System.out.println("Triangles loaded: " + teapot.size());
+
+        Color floorColor = new Color(60, 60, 70);
         scene.add(new Triangle(
-                new Vector3D(-3.0, -0.5,  1.0),
-                new Vector3D( 3.0, -0.5,  1.0),
-                new Vector3D( 0.0, -0.5, -2.0),
-                new Color(50, 180, 80)          // green floor
+                new Vector3D(-8, 0, -8),
+                new Vector3D( 8, 0, -8),
+                new Vector3D( 8, 0,  8),
+                floorColor
         ));
-
         scene.add(new Triangle(
-                new Vector3D( 0.0,  1.5, -0.5),
-                new Vector3D(-0.8,  0.2, -0.5),
-                new Vector3D( 0.8,  0.2, -0.5),
-                new Color(255, 200, 0)
+                new Vector3D(-8, 0, -8),
+                new Vector3D( 8, 0,  8),
+                new Vector3D(-8, 0,  8),
+                floorColor
         ));
 
         Camera camera = new Camera(
-                new Vector3D(0, 0, 5),
-                60,
+                new Vector3D(0.2, 3.5, 10),
+                45,
                 width, height,
                 0.1,
-                20.0
+                50.0
         );
 
-        Raytracer rt = new Raytracer(scene, camera, Color.WHITE);
+        Raytracer rt = new Raytracer(scene, camera, new Color(20, 20, 30));
+        System.out.println("Rendering...");
         BufferedImage image = rt.render();
 
-        File out = new File("output_v02.png");
+        File out = new File("output_v04.png");
         ImageIO.write(image, "png", out);
         System.out.println("Rendered → " + out.getAbsolutePath());
     }
