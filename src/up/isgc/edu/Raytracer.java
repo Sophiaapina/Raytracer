@@ -11,8 +11,8 @@ public class Raytracer {
     private Camera camera;
     private Color  background;
 
-    private Vector3D lightPosition   = new Vector3D(5, 10, 8);
-    private double   ambientStrength = 0.15;
+    private Vector3D lightPosition = new Vector3D(5, 10, 8);
+    private Color    lightColor    = Color.WHITE;
 
     public Raytracer(Scene scene, Camera camera, Color background) {
         this.scene      = scene;
@@ -20,18 +20,40 @@ public class Raytracer {
         this.background = background;
     }
 
-    private Color flatShade(Intersection hit) {
-        Vector3D normal  = hit.normal;
-        Vector3D toLight = lightPosition.subtract(hit.point).normalize();
+    private Color phongShade(Intersection hit, Ray ray) {
+        Object3D obj = hit.object;
+        Vector3D N   = hit.normal;
+        Vector3D L   = lightPosition.subtract(hit.point).normalize();
+        Vector3D V   = ray.direction.scale(-1).normalize();
 
-        double diffuse   = Math.max(0, normal.dot(toLight));
-        double intensity = Math.min(ambientStrength + (1.0 - ambientStrength) * diffuse, 1.0);
 
-        Color base = hit.object.color;
-        int r = (int)(base.getRed()   * intensity);
-        int g = (int)(base.getGreen() * intensity);
-        int b = (int)(base.getBlue()  * intensity);
-        return new Color(r, g, b);
+        double NdotL = Math.max(0, N.dot(L));
+        Vector3D R   = N.scale(2 * NdotL).subtract(L).normalize();
+
+        double RdotV = Math.max(0, R.dot(V));
+
+        double ambientI  = obj.ambient;
+        double diffuseI  = obj.diffuse  * NdotL;
+        double specularI = obj.specular * Math.pow(RdotV, obj.shininess);
+
+        Color base = obj.color;
+        double br = base.getRed()   / 255.0;
+        double bg = base.getGreen() / 255.0;
+        double bb = base.getBlue()  / 255.0;
+
+        double lr = lightColor.getRed()   / 255.0;
+        double lg = lightColor.getGreen() / 255.0;
+        double lb = lightColor.getBlue()  / 255.0;
+
+        double r = br * (ambientI + diffuseI) + lr * specularI;
+        double g = bg * (ambientI + diffuseI) + lg * specularI;
+        double b = bb * (ambientI + diffuseI) + lb * specularI;
+
+        r = Math.min(1.0, Math.max(0, r));
+        g = Math.min(1.0, Math.max(0, g));
+        b = Math.min(1.0, Math.max(0, b));
+
+        return new Color((int)(r * 255), (int)(g * 255), (int)(b * 255));
     }
 
     public BufferedImage render() {
@@ -43,7 +65,7 @@ public class Raytracer {
             for (int px = 0; px < camera.width; px++) {
                 Ray ray = camera.generateRay(px, py);
                 Intersection hit = scene.closestIntersection(ray, camera);
-                Color color = (hit != null) ? flatShade(hit) : background;
+                Color color = (hit != null) ? phongShade(hit, ray) : background;
                 image.setRGB(px, py, color.getRGB());
             }
         }
@@ -57,29 +79,34 @@ public class Raytracer {
 
         Scene scene = new Scene();
 
-
         String objPath = "src/up/isgc/edu/utils/Teapot.obj";
-        Color teapotColor = new Color(255, 105, 180);
+        Color teapotColor = new Color(180, 100, 40);
 
         List<Triangle> teapot = OBJreader.loadOBJ(objPath, teapotColor);
         for (Triangle t : teapot) {
+            t.setMaterial(0.15, 0.6, 0.8, 64);
             scene.add(t);
         }
         System.out.println("Triangles loaded: " + teapot.size());
 
         Color floorColor = new Color(60, 60, 70);
-        scene.add(new Triangle(
+        Triangle floor1 = new Triangle(
                 new Vector3D(-8, 0, -8),
                 new Vector3D( 8, 0, -8),
                 new Vector3D( 8, 0,  8),
                 floorColor
-        ));
-        scene.add(new Triangle(
+        );
+        Triangle floor2 = new Triangle(
                 new Vector3D(-8, 0, -8),
                 new Vector3D( 8, 0,  8),
                 new Vector3D(-8, 0,  8),
                 floorColor
-        ));
+        );
+
+        floor1.setMaterial(0.1, 0.8, 0.0, 1);
+        floor2.setMaterial(0.1, 0.8, 0.0, 1);
+        scene.add(floor1);
+        scene.add(floor2);
 
         Camera camera = new Camera(
                 new Vector3D(0.2, 3.5, 10),
@@ -93,7 +120,7 @@ public class Raytracer {
         System.out.println("Rendering...");
         BufferedImage image = rt.render();
 
-        File out = new File("output_v04.png");
+        File out = new File("output_v05.png");
         ImageIO.write(image, "png", out);
         System.out.println("Rendered → " + out.getAbsolutePath());
     }
