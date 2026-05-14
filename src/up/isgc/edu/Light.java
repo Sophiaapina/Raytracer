@@ -49,8 +49,8 @@ public class Light {
     public double attenuation(Vector3D point) {
         if (type == Type.DIRECTIONAL) return 1.0;
         double d  = distanceFrom(point);
-        double kl = 0.09;   // linear
-        double kq = 0.032;  // quadratic
+        double kl = 0.09;
+        double kq = 0.032;
         return 1.0 / (1.0 + kl * d + kq * d * d);
     }
 }

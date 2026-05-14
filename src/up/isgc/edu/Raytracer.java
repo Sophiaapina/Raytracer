@@ -103,7 +103,7 @@ public class Raytracer {
 
         Scene scene = new Scene();
 
-        // --- Teapot ---
+ 
         String objPath = "src/up/isgc/edu/utils/Teapot.obj";
         Color teapotColor = new Color(180, 100, 40);
 
@@ -114,7 +114,6 @@ public class Raytracer {
         }
         System.out.println("Triangles loaded: " + teapot.size());
 
-        // --- Piso ---
         Color floorColor = new Color(60, 60, 70);
         Triangle floor1 = new Triangle(
                 new Vector3D(-8, 0, -8), new Vector3D(8, 0, -8), new Vector3D(8, 0, 8), floorColor);
@@ -125,7 +124,7 @@ public class Raytracer {
         scene.add(floor1);
         scene.add(floor2);
 
-        // --- Cámara ---
+
         Camera camera = new Camera(
                 new Vector3D(0.2, 3.5, 10), 45, width, height, 0.1, 50.0
         );
