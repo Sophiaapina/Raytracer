@@ -14,7 +14,7 @@ public class Raytracer {
     private List<Light> lights = new ArrayList<>();
 
     private double ambientStrength = 0.05;
-    private static final double SHADOW_BIAS = 1e-4; // evita self-shadowing
+    private static final double SHADOW_BIAS = 1e-4; 
 
     public Raytracer(Scene scene, Camera camera, Color background) {
         this.scene      = scene;
@@ -103,7 +103,7 @@ public class Raytracer {
 
         Scene scene = new Scene();
 
- 
+
         String objPath = "src/up/isgc/edu/utils/Teapot.obj";
         Color teapotColor = new Color(180, 100, 40);
 
